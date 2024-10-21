@@ -1,39 +1,77 @@
 import pandas as pd
-from broadsheet_generator import generate_broadsheet
-from classification import generate_classification
+import os
 
-# Define input files
-input_files = [
-    'input_files/BSF S1_SF0111.xlsx',
-    'input_files/BSF S1_SF0112.xlsx',
-    'input_files/BSF S1_SF0113.xlsx',
-    'input_files/BSF S3_SF1111.xlsx',
-    'input_files/BSF S3_SF2222.xlsx',
-    'input_files/BSF S3_SF3333.xlsx'
-]
+# Function to extract the year from the filename
+def extract_year_from_filename(filename):
+    return filename.split('_')[2][-1]  # Adjust this logic based on your file naming convention.
 
-# Read each file and store the sheets in a dictionary
-def read_grade_sheets():
-    grade_sheets = {}
-    for file in input_files:
-        major_1 = pd.read_excel(file, sheet_name='M1')  # Major 1
-        major_2 = pd.read_excel(file, sheet_name='M2')  # Major 2
-        grade_sheets[file] = {'M1': major_1, 'M2': major_2}
-    return grade_sheets
-    
-# Main function to coordinate the process
-def main():
-    grade_sheets = read_grade_sheets()
-    # Generate broadsheets for Major 1, Year 1 from each input file
-    for file, data in grade_sheets.items():
-        generate_broadsheet(data['M1'], 'M1', 'Intake_01', 1)  # Adjust intake/year as needed
-    # Example list of generated broadsheet files (you can dynamically collect this)
-    broadsheet_files = [
-        'output_files/Broadsheet_M1_Intake_01_Y1.xlsx'
-    ]
-    # Generate the classification file using the broadsheets
-    generate_classification(broadsheet_files)
+# Function to calculate the yearly average marks from broadsheets
+def calculate_yearly_average(broadsheets):
+    classification_data = []
 
-# Ensure the main function runs only when the script is executed directly
-if __name__ == "__main__":
-    main()
+    for broadsheet in broadsheets:
+        df = pd.read_excel(broadsheet)
+
+        # Ensure the file has the necessary columns
+        if 'Student Name' not in df.columns or 'Marks' not in df.columns:
+            print(f"Error: 'Student Name' or 'Marks' column not found in {broadsheet}")
+            continue
+
+        # Extract year from the filename
+        year = extract_year_from_filename(broadsheet)
+
+        # Group by student name and calculate the mean of their marks
+        grouped = df.groupby('Student Name').agg({'Marks': 'mean'}).reset_index()
+
+        # Append student info
+        for _, row in grouped.iterrows():
+            student_info = {
+                'Student Name': row['Student Name'],
+                'Yearly Average': row['Marks'],
+                'Year': year
+            }
+            classification_data.append(student_info)
+
+    return classification_data
+
+# Function to classify students based on their yearly average marks
+def classify_students_logic(classification_data):
+    for student in classification_data:
+        avg = student['Yearly Average']
+        if avg >= 70:
+            student['Classification'] = 'First Class'
+        elif avg >= 60:
+            student['Classification'] = 'Second Class Upper'
+        elif avg >= 50:
+            student['Classification'] = 'Second Class Lower'
+        elif avg >= 40:
+            student['Classification'] = 'Third Class'
+        else:
+            student['Classification'] = 'Fail'
+
+    return classification_data
+
+# Function to save the classified students to an Excel file
+def save_classification(classification_data, intake):
+    df_classification = pd.DataFrame(classification_data)
+
+    # Ensure the output directory exists
+    output_dir = "output_files/"
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    # Save the classification data to an Excel file
+    output_file = f"{output_dir}/Classification_{intake}.xlsx"
+    df_classification.to_excel(output_file, index=False)
+    print(f"Classification saved as {output_file}")
+
+# Function to process grades, this is the missing function in your error
+def process_grades_logic(broadsheets):
+    # Step 1: Calculate yearly averages
+    classification_data = calculate_yearly_average(broadsheets)
+
+    # Step 2: Classify students based on their yearly averages
+    classified_data = classify_students_logic(classification_data)
+
+    # Step 3: Save the classification to an output file
+    return classified_data
