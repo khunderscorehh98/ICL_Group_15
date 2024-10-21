@@ -1,56 +1,29 @@
 import customtkinter as ctk
-from tkinter import filedialog, messagebox
-import pandas as pd
-from scripts.broadsheet_generator import generate_broadsheet
-from scripts.classification import classify_students_logic
-from scripts.grade_processing import process_grades_logic
+from tkinter import messagebox
+from scripts.broadsheet_generator import generate_broadsheet_from_multiple_files
+from scripts.grade_processing import classify_students_from_broadsheet
 
-# Function to allow file selection for broadsheets
-def select_input_files():
-    files = filedialog.askopenfilenames(initialdir="input/", title="Select Broadsheets",
-                                        filetypes=[("Excel Files", "*.xlsx")])
-    return list(files)  # Returns a list of file paths selected
-
-# Function to generate broadsheets
-def generate_broadsheet_action():
+# Function to generate broadsheet and classify students from multiple "BSF" files
+def generate_broadsheet_and_classify_action():
     try:
-        broadsheets = select_input_files()  # Select the input broadsheets
-        intake = intake_entry.get()  # Get intake value from user input
-        year = year_entry.get()  # Get year value from user input
+        # Step 1: Generate the broadsheet from multiple "BSF" files
+        broadsheet_df = generate_broadsheet_from_multiple_files()
 
-        # Ensure that both intake and year are provided
-        if not intake or not year:
-            raise ValueError("Intake and year must be provided!")
+        # Step 2: Classify students based on the consolidated broadsheet
+        classify_students_from_broadsheet(broadsheet_df, "2024")
 
-        # Call generate_broadsheet with intake and year
-        generate_broadsheet(broadsheets, intake, year)
-
-        messagebox.showinfo("Success", "Broadsheets Generated Successfully!")
+        messagebox.showinfo("Success", "Broadsheet and Classification Generated Successfully!")
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to generate broadsheets: {e}")
+        messagebox.showerror("Error", f"Failed to generate broadsheet and classification: {e}")
 
-# Create a basic GUI for file input and actions
+# Create the GUI
 app = ctk.CTk()
-
-# Set up the GUI window
 app.geometry("400x300")
-app.title("Broadsheet Generator")
+app.title("Broadsheet and Classification Generator")
 
-# Intake entry
-intake_label = ctk.CTkLabel(app, text="Enter Intake:")
-intake_label.pack(pady=10)
-intake_entry = ctk.CTkEntry(app)
-intake_entry.pack(pady=10)
-
-# Year entry
-year_label = ctk.CTkLabel(app, text="Enter Year:")
-year_label.pack(pady=10)
-year_entry = ctk.CTkEntry(app)
-year_entry.pack(pady=10)
-
-# Button to trigger the broadsheet generation
-generate_button = ctk.CTkButton(app, text="Generate Broadsheet", command=generate_broadsheet_action)
+# Button to trigger the broadsheet generation and classification
+generate_button = ctk.CTkButton(app, text="Generate from BSF Files", command=generate_broadsheet_and_classify_action)
 generate_button.pack(pady=20)
 
 # Run the app
