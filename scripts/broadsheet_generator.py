@@ -1,36 +1,26 @@
 import pandas as pd
+import os
 
-# Function to generate a broadsheet
-def generate_broadsheet(major_data, major_name, intake, year):
-    """
-    Generates a broadsheet for a specific major and saves it as an Excel file.
+# Function to generate broadsheets
+def generate_broadsheet(broadsheets, intake, year):
+    output_dir = "output_files/"
     
-    :param major_data: DataFrame of student data for a specific major
-    :param major_name: Name of the major (e.g., 'Computer Science')
-    :param intake: Year of intake (e.g., '2024')
-    :param year: Academic year (e.g., '1', '2', '3')
-    :return: None
-    """
-    # Define the broadsheet columns
-    broadsheet_columns = ['Roll No', 'Student Name', 'IC No', 'Module Code', 'CV', 'CW%', 'UE%', 'Marks', 'Remarks']
-    broadsheet = pd.DataFrame(columns=broadsheet_columns)
-
-    # Populate the broadsheet with relevant data from the major sheet
-    for index, row in major_data.iterrows():
-        new_row = {
-            'Roll No': row['Roll No'],
-            'Student Name': row['Student Name'],
-            'IC No': row['IC No'],
-            'Module Code': row.get('Module Code', 'SF1111'),  # Default module code if missing
-            'CV': row.get('CV', 4),  # Default CV value
-            'CW%': row['Coursework'],
-            'UE%': row['Examination'],
-            'Marks': row['Final Mark'],
-            'Remarks': 'Pass' if row['Final Mark'] >= 50 else 'Fail'
-        }
-        broadsheet = broadsheet.append(new_row, ignore_index=True)
-
-    # Save the broadsheet as an Excel file based on the major, intake, and year
-    output_file = f'output_files/Broadsheet_{major_name}_Intake_{intake}_Year_{year}.xlsx'
-    broadsheet.to_excel(output_file, index=False)
-    print(f'Broadsheet for {major_name} Year {year} saved to {output_file}')
+    # Ensure the output directory exists
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    
+    for broadsheet in broadsheets:
+        # Read the broadsheet file
+        df = pd.read_excel(broadsheet)
+        
+        # Process the data as needed (modify this section based on your actual logic)
+        # Here we'll assume that we just want to save the broadsheet with the intake and year information.
+        # You can modify this to do any other processing as needed.
+        
+        output_file = f"{output_dir}/Broadsheet_{intake}_Year_{year}.xlsx"
+        
+        # Save the broadsheet to the output directory
+        df.to_excel(output_file, index=False)
+        print(f"Generated broadsheet for intake {intake}, year {year} from file: {broadsheet}")
+    
+    print("Broadsheet generation complete.")
