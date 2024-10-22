@@ -1,40 +1,44 @@
 import pandas as pd
-import os
+import traceback
 
-# Function to classify students based on the consolidated broadsheet
-def classify_students_from_broadsheet(broadsheet_df, intake):
-    classification_data = []
+# Function to classify students from a broadsheet
+def classify_students_from_broadsheet(broadsheet_df):
+    try:
+        classification_data = []
 
-    # Group by student name and calculate the average marks
-    grouped = broadsheet_df.groupby('Student Name').agg({'Total Marks': 'mean'}).reset_index()
+        # Ensure the "Total Marks" column is available for classification
+        if 'Total Marks' not in broadsheet_df.columns:
+            print(f"Error: 'Total Marks' column not found in the broadsheet. Available columns: {broadsheet_df.columns}")
+            return None
 
-    # Classify students based on their average marks
-    for _, row in grouped.iterrows():
-        student_info = {
-            'Student Name': row['Student Name'],
-            'Yearly Average': row['Total Marks'],
-        }
+        # Group by student name and calculate their yearly average
+        grouped = broadsheet_df.groupby('Student Name').agg({'Total Marks': 'mean'}).reset_index()
 
-        avg = row['Total Marks']
-        if avg >= 70:
-            student_info['Classification'] = 'First Class'
-        elif avg >= 60:
-            student_info['Classification'] = 'Second Class Upper'
-        elif avg >= 50:
-            student_info['Classification'] = 'Second Class Lower'
-        elif avg >= 40:
-            student_info['Classification'] = 'Third Class'
-        else:
-            student_info['Classification'] = 'Fail'
+        # Classify students based on their yearly average
+        for _, row in grouped.iterrows():
+            student_info = {
+                'Student Name': row['Student Name'],
+                'Yearly Average': row['Total Marks'],
+            }
 
-        classification_data.append(student_info)
+            # Apply classification thresholds
+            if row['Total Marks'] >= 70:
+                student_info['Classification'] = 'First Class'
+            elif row['Total Marks'] >= 60:
+                student_info['Classification'] = 'Second Class Upper'
+            elif row['Total Marks'] >= 50:
+                student_info['Classification'] = 'Second Class Lower'
+            elif row['Total Marks'] >= 40:
+                student_info['Classification'] = 'Third Class'
+            else:
+                student_info['Classification'] = 'Fail'
 
-    # Convert the classification data to a DataFrame
-    classification_df = pd.DataFrame(classification_data)
+            classification_data.append(student_info)
 
-    # Save the classification data to "Classification M1_01.xlsx"
-    output_file = 'input/Classification M1_01.xlsx'
-    classification_df.to_excel(output_file, index=False)
-    print(f"Classification saved to {output_file}")
+        # Convert classification data to DataFrame and return
+        return pd.DataFrame(classification_data)
 
-    return classification_df
+    except Exception as e:
+        print(f"Failed to classify students: {e}")
+        traceback.print_exc()  # Print detailed traceback of the error
+        return None
